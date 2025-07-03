@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useState } from 'react';
 import { Alert, Image, Modal, PixelRatio, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
@@ -231,18 +230,23 @@ const EventCreateScreen: React.FC<{ onCreated?: () => void }> = ({ onCreated }) 
           const blob = await response.blob();
           console.log('Blob created, size:', blob.size);
           
-          const storageRef = ref(storage, `eventImages/${Date.now()}_${auth.currentUser?.uid}`);
-          console.log('Uploading to storage ref:', storageRef.fullPath);
+          // const storageRef = ref(storage, `eventImages/${Date.now()}_${auth.currentUser?.uid}`);
+          // console.log('Uploading to storage ref:', storageRef.fullPath);
           
-          await uploadBytes(storageRef, blob);
-          console.log('Upload completed, getting download URL...');
+          // await uploadBytes(storageRef, blob);
+          // console.log('Upload completed, getting download URL...');
           
-          imageUrl = await getDownloadURL(storageRef);
-          console.log('Download URL obtained:', imageUrl);
+          // imageUrl = await getDownloadURL(storageRef);
+          // console.log('Download URL obtained:', imageUrl);
         } catch (uploadError) {
           console.error('Image upload error:', uploadError);
           if (uploadError && typeof uploadError === 'object') {
             console.error('Error details:', {
+              code: (uploadError as any).code,
+              message: (uploadError as any).message,
+              stack: (uploadError as any).stack
+            });
+            console.log('Error details:', {
               code: (uploadError as any).code,
               message: (uploadError as any).message,
               stack: (uploadError as any).stack
@@ -293,7 +297,7 @@ const EventCreateScreen: React.FC<{ onCreated?: () => void }> = ({ onCreated }) 
         organizerName: auth.currentUser?.displayName || 'Unknown',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        image: imageUrl,
+        // image: imageUrl,
         indoorOutdoor,
         autoApprove,
         currentAttendees: 0,

@@ -31,9 +31,10 @@ const ProfileEditScreen = () => {
   const [credentials, setCredentials] = useState('');
   const [phone, setPhone] = useState('');
   const [gender, setGender] = useState('');
-  const [dateOfBirthYear, setDateOfBirthYear] = useState<string | number>('year');
-  const [dateOfBirthMonth, setDateOfBirthMonth] = useState<string | number>('month');
-  const [dateOfBirthDay, setDateOfBirthDay] = useState<string | number>('day');
+ const [dateOfBirthYear, setDateOfBirthYear] = useState<number | null>(null);
+const [dateOfBirthMonth, setDateOfBirthMonth] = useState<number | null>(null);
+const [dateOfBirthDay, setDateOfBirthDay] = useState<number | null>(null);
+
   const [address, setAddress] = useState('');
   const [goals, setGoals] = useState('');
   const roles = ['Player', 'Trainer', 'Both'];
@@ -47,7 +48,8 @@ const ProfileEditScreen = () => {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
-          setName(data.name || user.displayName || '');
+        
+          setName(data.displayName || user.displayName || '');
           setBio(data.bio || '');
           setAvatar(data.avatar || null);
           setRole(data.role || 'Player');
@@ -56,16 +58,17 @@ const ProfileEditScreen = () => {
           setPhone(data.phone || '');
           setGender(data.gender || '');
           // Parse dateOfBirth into year, month, day pickers
-          if (data.dateOfBirth && typeof data.dateOfBirth === 'string' && data.dateOfBirth.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const [y, m, d] = data.dateOfBirth.split('-');
-            setDateOfBirthYear(Number(y));
-            setDateOfBirthMonth(Number(m) - 1);
-            setDateOfBirthDay(Number(d));
-          } else {
-            setDateOfBirthYear('year');
-            setDateOfBirthMonth('month');
-            setDateOfBirthDay('day');
-          }
+       if (data.dateOfBirth && typeof data.dateOfBirth === 'string' && data.dateOfBirth.match(/^\d{4}-\d{2}-\d{2}$/)) {
+  const [y, m, d] = data.dateOfBirth.split('-');
+  setDateOfBirthYear(Number(y));
+  setDateOfBirthMonth(Number(m) ); // important zero index for Picker
+  setDateOfBirthDay(Number(d));
+} else {
+  setDateOfBirthYear(null);
+  setDateOfBirthMonth(null);
+  setDateOfBirthDay(null);
+}
+
           setAddress(data.address || '');
           setGoals(data.goals || '');
         } else {
@@ -319,7 +322,7 @@ const ProfileEditScreen = () => {
               <TouchableOpacity 
                 key={r} 
                 onPress={() => setRole(r)} 
-                style={[styles.roleButton, role === r && styles.roleButtonActive]}
+               style={[styles.roleButton, role.toLowerCase() === r.toLowerCase() && styles.roleButtonActive]}
               >
                 <Text style={[styles.roleButtonText, role === r && styles.roleButtonTextActive]}>
                   {r}
@@ -349,7 +352,7 @@ const ProfileEditScreen = () => {
           </View>
         )}
 
-        {(role === 'Trainer' || role === 'Both') && (
+        {(role === 'trainer' || role === 'Both') && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Credentials & Experience</Text>
             <TextInput 
@@ -387,45 +390,52 @@ const ProfileEditScreen = () => {
           </Picker>
         </View>
         {/* Date of Birth Pickers */}
-        <Text style={styles.label}>Date of Birth</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
-          <View style={{ flex: 2 }}>
-            <Picker
-              selectedValue={dateOfBirthMonth}
-              onValueChange={setDateOfBirthMonth}
-              style={styles.picker}
-            >
-              <Picker.Item label="Month" value="month" />
-              {Array.from({ length: 12 }, (_, i) => (
-                <Picker.Item key={i} label={new Date(0, i).toLocaleString('default', { month: 'long' })} value={i} />
-              ))}
-            </Picker>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Picker
-              selectedValue={dateOfBirthDay}
-              onValueChange={setDateOfBirthDay}
-              style={styles.picker}
-            >
-              <Picker.Item label="Day" value="day" />
-              {Array.from({ length: 31 }, (_, i) => (
-                <Picker.Item key={i + 1} label={String(i + 1)} value={i + 1} />
-              ))}
-            </Picker>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Picker
-              selectedValue={dateOfBirthYear}
-              onValueChange={setDateOfBirthYear}
-              style={styles.picker}
-            >
-              <Picker.Item label="Year" value="year" />
-              {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                <Picker.Item key={year} label={String(year)} value={year} />
-              ))}
-            </Picker>
-          </View>
-        </View>
+     <Text style={styles.label}>Date of Birth</Text>
+<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 4, marginBottom: 12 }}>
+ <View style={{ flex: 2, minWidth: 120 }}>
+    <Picker
+      selectedValue={dateOfBirthMonth}
+      onValueChange={setDateOfBirthMonth}
+      style={styles.picker}
+    >
+      <Picker.Item label="Month" value={null} />
+      {Array.from({ length: 12 }, (_, i) => (
+        <Picker.Item
+          key={i}
+          label={new Date(0, i).toLocaleString('default', { month: 'long' })}
+          value={i}
+        />
+      ))}
+    </Picker>
+  </View>
+ <View style={{ flex: 1, minWidth: 100 }}>
+    <Picker
+      selectedValue={dateOfBirthDay}
+      onValueChange={setDateOfBirthDay}
+      style={styles.picker}
+    >
+      <Picker.Item label="Day" value={null} />
+      {Array.from({ length: 31 }, (_, i) => (
+        <Picker.Item key={i + 1} label={String(i + 1)} value={i + 1} />
+      ))}
+    </Picker>
+  </View>
+<View style={{ flex: 1, minWidth: 120 }}>
+    <Picker
+      selectedValue={dateOfBirthYear}
+      onValueChange={setDateOfBirthYear}
+      style={styles.picker}
+    >
+      <Picker.Item label="Year" value={null} />
+      {Array.from({ length: 100 }, (_, i) => {
+        const year = new Date().getFullYear() - i;
+        return <Picker.Item key={year} label={String(year)} value={year} />;
+      })}
+    </Picker>
+  </View>
+</View>
+
+
         <TextInput 
           style={styles.input} 
           placeholder="Address" 
