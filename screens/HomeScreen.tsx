@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
+import * as Location from 'expo-location';
 import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, Timestamp, where } from 'firebase/firestore';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Image, Modal, PixelRatio, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import MapView, { Marker, Region } from 'react-native-maps';
 import { useFilters } from '../components/FilterContext';
 import { AuthContext } from '../constants/AuthContext';
@@ -62,6 +65,9 @@ const HomeScreen: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showEventDetail, setShowEventDetail] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['15%', '50%', '90%'], []);
 
   // Real-time event updates with enhanced logging
   useEffect(() => {
@@ -106,6 +112,20 @@ const HomeScreen: React.FC = () => {
     return () => unsubscribe();
   }, [user]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({});
+          setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        }
+      } catch (e) {
+        // Ignore location errors
+      }
+    })();
+  }, []);
+
   const openEventDetail = (event: Event) => {
     navigation.navigate('EventDetail', { event });
   };
@@ -139,9 +159,9 @@ const HomeScreen: React.FC = () => {
     setFilterModalVisible(true);
   };
 
-  // NYC as default center for radius filtering
-  const centerLat = 33.4484;
-  const centerLng = -112.0740;
+  // Use user location for radius filtering if available, otherwise map center
+  const centerLat = userLocation ? userLocation.latitude : region.latitude;
+  const centerLng = userLocation ? userLocation.longitude : region.longitude;
   function getDistanceFromLatLonInMiles(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 3958.8; // Radius of the earth in miles
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -156,7 +176,7 @@ const HomeScreen: React.FC = () => {
 
   // Apply filters in real-time using FilterContext
   useEffect(() => {
-    let filtered = events;
+    let filtered = Array.isArray(events) ? events : [];
 
     // Search filter
     if (search.trim()) {
@@ -229,7 +249,7 @@ const HomeScreen: React.FC = () => {
     }
 
     setFilteredEvents(filtered);
-  }, [events, search, sport, price, date, radius, city]);
+  }, [events, search, sport, price, date, radius, city, region]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -266,6 +286,13 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  // Helper to sort events by distance from center
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    const da = getDistanceFromLatLonInMiles(centerLat, centerLng, a.latitude, a.longitude);
+    const db = getDistanceFromLatLonInMiles(centerLat, centerLng, b.latitude, b.longitude);
+    return da - db;
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header with notification icon only */}
@@ -277,6 +304,43 @@ const HomeScreen: React.FC = () => {
         >
           <Ionicons name="notifications-outline" size={24} color={colors.primary} />
         </TouchableOpacity>
+      </View>
+      {/* Location Search Bar */}
+      <View style={{ marginHorizontal: 16, marginBottom: 8, zIndex: 10 }}>
+        <GooglePlacesAutocomplete
+          placeholder="Search for city or location..."
+          onPress={(data, details = null) => {
+            if (details && details.geometry && details.geometry.location) {
+              setRegion(region => ({
+                ...region,
+                latitude: details.geometry.location.lat,
+                longitude: details.geometry.location.lng,
+              }));
+            }
+          }}
+          fetchDetails={true}
+          query={{
+            key: 'YOUR_GOOGLE_MAPS_API_KEY',
+            language: 'en',
+            types: '(cities)',
+          }}
+          styles={{
+            textInput: {
+              height: 40,
+              borderRadius: 8,
+              borderColor: '#ccc',
+              borderWidth: 1,
+              paddingHorizontal: 10,
+              fontSize: 16,
+              backgroundColor: '#fff',
+            },
+            listView: {
+              backgroundColor: '#fff',
+              borderRadius: 8,
+              marginTop: 2,
+            },
+          }}
+        />
       </View>
       
       {/* Enhanced Search Bar with Refresh */}
@@ -372,6 +436,29 @@ const HomeScreen: React.FC = () => {
               ))}
             </View>
           </View>
+          {/* Bottom Sheet List */}
+          <BottomSheet
+            ref={bottomSheetRef}
+            index={1}
+            snapPoints={snapPoints}
+            enablePanDownToClose={false}
+            style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
+          >
+            <View style={{ flex: 1, paddingHorizontal: 16 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Upcoming Events</Text>
+              <FlatList
+                data={sortedEvents}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity onPress={() => handleEventPress(item)} style={{ paddingVertical: 10, borderBottomWidth: 1, borderColor: '#eee' }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{item.title}</Text>
+                    <Text style={{ color: '#555', fontSize: 13 }}>{item.location} • {formatEventDate(item.date)}</Text>
+                  </TouchableOpacity>
+                )}
+                style={{ maxHeight: 300 }}
+              />
+            </View>
+          </BottomSheet>
           {/* Legend */}
           <View style={styles.legendRow}>
             <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: colors.free }]} /><Text style={styles.legendLabel}>Free</Text></View>
@@ -421,7 +508,16 @@ const HomeScreen: React.FC = () => {
       {/* Event Create Modal Overlay */}
       <Modal visible={createModalVisible} animationType="slide" transparent={false} onRequestClose={() => setCreateModalVisible(false)}>
         <View style={{ flex: 1, backgroundColor: '#F7F8FA' }}>
-          <EventCreateScreen onCreated={() => setCreateModalVisible(false)} />
+          <EventCreateScreen onCreated={(location) => {
+            setCreateModalVisible(false);
+            if (location) {
+              setRegion(region => ({
+                ...region,
+                latitude: location.latitude,
+                longitude: location.longitude,
+              }));
+            }
+          }} />
           <TouchableOpacity style={{ marginTop: 8, alignSelf: 'center' }} onPress={() => setCreateModalVisible(false)}>
             <Text style={{ color: '#1877F2', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
           </TouchableOpacity>

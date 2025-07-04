@@ -341,23 +341,25 @@ const ActivitiesScreen: React.FC = () => {
   };
 
   const getEventsByCategory = () => {
+    const safeEvents = Array.isArray(events) ? events : [];
+    const safeBookings = Array.isArray(bookings) ? bookings : [];
     if (userRole === 'trainer') {
       return {
-        active: events.filter(e => !isEventPast(e)),
-        past: events.filter(e => isEventPast(e))
+        active: safeEvents.filter(e => !isEventPast(e)),
+        past: safeEvents.filter(e => isEventPast(e))
       };
     } else {
-      const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
-      const pendingBookings = bookings.filter(b => b.status === 'pending');
-      const rejectedBookings = bookings.filter(b => b.status === 'rejected');
+      const confirmedBookings = safeBookings.filter(b => b.status === 'confirmed');
+      const pendingBookings = safeBookings.filter(b => b.status === 'pending');
+      const rejectedBookings = safeBookings.filter(b => b.status === 'rejected');
 
-      const confirmedEvents = events.filter(e => 
+      const confirmedEvents = safeEvents.filter(e => 
         confirmedBookings.some(b => b.eventId === e.id)
       );
-      const pendingEvents = events.filter(e => 
+      const pendingEvents = safeEvents.filter(e => 
         pendingBookings.some(b => b.eventId === e.id)
       );
-      const rejectedEvents = events.filter(e => 
+      const rejectedEvents = safeEvents.filter(e => 
         rejectedBookings.some(b => b.eventId === e.id)
       );
 
@@ -570,55 +572,58 @@ const ActivitiesScreen: React.FC = () => {
         )
       ) : (
         // Hosted Events Tab (for Trainers)
-        hostedEvents.length === 0 ? (
-            <View style={[styles.emptyCard, { maxWidth: maxCardWidth, width: '100%' }]}>
-            <Ionicons name="calendar-outline" size={48} color={colors.muted} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>No hosted sessions</Text>
-            <Text style={styles.emptyText}>Create your first session to start training others!</Text>
-            <TouchableOpacity style={styles.exploreButton} onPress={handleCreateEvent}>
-              <Text style={styles.exploreButtonText}>Create Event</Text>
-                </TouchableOpacity>
+        <>
+          {hostedEvents.length === 0 ? (
+            <View style={[styles.emptyCard, { maxWidth: maxCardWidth, width: '100%' }]}> 
+              <Ionicons name="calendar-outline" size={48} color={colors.muted} style={styles.emptyIcon} />
+              <Text style={styles.emptyTitle}>No hosted sessions</Text>
+              <Text style={styles.emptyText}>Create your first session to start training others!</Text>
             </View>
           ) : (
             <FlatList
               data={hostedEvents}
               keyExtractor={item => item.id}
               renderItem={({ item }) => (
-                  <View style={[styles.eventCard, { maxWidth: maxCardWidth, width: '100%' }]}>
-                <View style={styles.eventHeader}>
+                <View style={[styles.eventCard, { maxWidth: maxCardWidth, width: '100%' }]}> 
+                  <View style={styles.eventHeader}>
                     <Text style={styles.eventTitle}>{item.title}</Text>
-                  <View style={styles.attendeeStats}>
-                    <Ionicons name="people-outline" size={16} color={colors.primary} />
-                    <Text style={styles.attendeeText}>
-                      {item.currentAttendees}/{item.maxCapacity} attendees
-                    </Text>
+                    <View style={styles.attendeeStats}>
+                      <Ionicons name="people-outline" size={16} color={colors.primary} />
+                      <Text style={styles.attendeeText}>
+                        {item.currentAttendees}/{item.maxCapacity} attendees
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.eventMeta}>
+                    {formatDate(item.date)} • {item.location} • {item.price}
+                  </Text>
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity 
+                      style={styles.actionButton} 
+                      onPress={() => handleManageEvent(item)}
+                    >
+                      <Ionicons name="settings-outline" size={16} color="#fff" style={{ marginRight: 4 }} />
+                      <Text style={styles.actionButtonText}>Manage</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.actionButton, styles.chatButton]} 
+                      onPress={() => handleChat(item)}
+                    >
+                      <Ionicons name="chatbubble-outline" size={16} color="#fff" style={{ marginRight: 4 }} />
+                      <Text style={styles.chatButtonText}>Chat</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-                <Text style={styles.eventMeta}>
-                  {formatDate(item.date)} • {item.location} • {item.price}
-                </Text>
-                <View style={styles.actionRow}>
-                  <TouchableOpacity 
-                    style={styles.actionButton} 
-                    onPress={() => handleManageEvent(item)}
-                  >
-                    <Ionicons name="settings-outline" size={16} color="#fff" style={{ marginRight: 4 }} />
-                    <Text style={styles.actionButtonText}>Manage</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.chatButton]} 
-                    onPress={() => handleChat(item)}
-                  >
-                    <Ionicons name="chatbubble-outline" size={16} color="#fff" style={{ marginRight: 4 }} />
-                    <Text style={styles.chatButtonText}>Chat</Text>
-                </TouchableOpacity>
-                </View>
-              </View>
               )}
               contentContainerStyle={{ paddingBottom: spacing.lg, alignItems: 'center' }}
-            showsVerticalScrollIndicator={false}
-          />
-        )
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+          {/* Always show Create Event button for trainers */}
+          <TouchableOpacity style={[styles.exploreButton, { alignSelf: 'center', marginTop: 16 }]} onPress={handleCreateEvent}>
+            <Text style={styles.exploreButtonText}>Create Event</Text>
+          </TouchableOpacity>
+        </>
       )}
 
       {/* Event Creation Modal */}

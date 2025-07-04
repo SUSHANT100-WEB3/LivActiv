@@ -243,7 +243,7 @@ const MessagesScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
-  const filteredChats = chats.filter(chat => {
+  const filteredChats = (Array.isArray(chats) ? chats : []).filter(chat => {
     const searchTerm = search.toLowerCase();
     const chatTitle = chat.type === 'event' ? chat.eventTitle : chat.recipientName;
     const eventTitle = chat.eventTitle;

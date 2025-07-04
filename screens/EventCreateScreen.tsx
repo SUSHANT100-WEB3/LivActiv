@@ -7,7 +7,7 @@ import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
 import { auth, db, storage } from '../constants/firebase';
 import { colors, fontSizes, radii, spacing } from '../constants/theme';
 
-const EventCreateScreen: React.FC<{ onCreated?: () => void }> = ({ onCreated }) => {
+const EventCreateScreen: React.FC<{ onCreated?: (location?: { latitude: number; longitude: number }) => void }> = ({ onCreated }) => {
   const [title, setTitle] = useState('');
   const [type, setType] = useState('');
   const [description, setDescription] = useState('');
@@ -327,7 +327,7 @@ const EventCreateScreen: React.FC<{ onCreated?: () => void }> = ({ onCreated }) 
             setIndoorOutdoor('outdoor');
             setAutoApprove(false);
             
-            if (onCreated) onCreated();
+            if (onCreated) onCreated({ latitude: eventData.latitude, longitude: eventData.longitude });
           }
         }
       ]);

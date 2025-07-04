@@ -226,10 +226,11 @@ const AttendeeListModal: React.FC<AttendeeListModalProps> = ({ visible, onClose,
   );
 
   const getStats = () => {
-    const confirmed = attendees.filter(a => a.status === 'confirmed').length;
-    const pending = attendees.filter(a => a.status === 'pending').length;
-    const rejected = attendees.filter(a => a.status === 'rejected').length;
-    const paid = attendees.filter(a => a.paid).length;
+    const safeAttendees = Array.isArray(attendees) ? attendees : [];
+    const confirmed = safeAttendees.filter(a => a.status === 'confirmed').length;
+    const pending = safeAttendees.filter(a => a.status === 'pending').length;
+    const rejected = safeAttendees.filter(a => a.status === 'rejected').length;
+    const paid = safeAttendees.filter(a => a.paid).length;
     
     return { confirmed, pending, rejected, paid };
   };

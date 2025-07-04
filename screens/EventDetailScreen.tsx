@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../constants/firebase';
 import { colors, fontSizes, radii, spacing } from '../constants/theme';
+import ChatRoomScreen from './ChatRoomScreen';
 import StripePaymentModal from './StripePaymentModal';
 
 interface EventDetailScreenProps {
@@ -449,23 +450,16 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ eventId, onClose 
       />
 
       {/* Chat Modal */}
-      <Modal visible={showChatModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.chatHeader}>
-              <Text style={styles.modalTitle}>Chat with Organizer</Text>
-              <TouchableOpacity onPress={() => setShowChatModal(false)}>
-                <Ionicons name="close" size={24} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.chatPlaceholder}>
-              <Ionicons name="chatbubbles-outline" size={48} color={colors.muted} />
-              <Text style={styles.chatPlaceholderText}>
-                Chat functionality will be implemented here
-              </Text>
-            </View>
-          </View>
-        </View>
+      <Modal visible={showChatModal} animationType="slide" presentationStyle="pageSheet">
+        {event && (
+          <ChatRoomScreen
+            eventId={event.id}
+            recipientId={event.organizer}
+            recipientName={event.organizerName}
+            isGroupChat={false}
+            onClose={() => setShowChatModal(false)}
+          />
+        )}
       </Modal>
     </View>
   );
@@ -697,22 +691,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.medium,
     color: '#fff',
     fontWeight: 'bold',
-  },
-  chatHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  chatPlaceholder: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  chatPlaceholderText: {
-    fontSize: fontSizes.medium,
-    color: colors.muted,
-    textAlign: 'center',
-    marginTop: spacing.md,
   },
 });
 
