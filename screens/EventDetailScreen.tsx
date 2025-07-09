@@ -216,7 +216,16 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ eventId, onClose 
     if (!timestamp) {
       return 'Date not available';
     }
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    let date: Date;
+    if (typeof (timestamp as any).toDate === 'function') {
+      date = (timestamp as any).toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+      date = new Date(timestamp);
+    } else {
+      return 'Invalid date';
+    }
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',

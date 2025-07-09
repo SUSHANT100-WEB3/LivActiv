@@ -7,7 +7,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React, { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, PixelRatio, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { AuthContext } from '../constants/AuthContext';
-import { db } from '../constants/firebase';
+import { db, storage } from '../constants/firebase';
 import { colors, fontSizes, radii, spacing } from '../constants/theme';
 
 const ProfileEditScreen = () => {
@@ -173,9 +173,9 @@ const [dateOfBirthDay, setDateOfBirthDay] = useState<number | null>(null);
       // Combine date of birth pickers into string
       let dob = '';
       if (
-        dateOfBirthYear !== 'year' &&
-        dateOfBirthMonth !== 'month' &&
-        dateOfBirthDay !== 'day'
+        dateOfBirthYear !== null &&
+        dateOfBirthMonth !== null &&
+        dateOfBirthDay !== null
       ) {
         const month = String(Number(dateOfBirthMonth) + 1).padStart(2, '0');
         const day = String(dateOfBirthDay).padStart(2, '0');
