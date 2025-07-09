@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { Timestamp, collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useContext, useEffect, useState } from 'react';
 import { FlatList, Modal, PixelRatio, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { AuthContext } from '../constants/AuthContext';
@@ -580,10 +580,11 @@ const ActivitiesScreen: React.FC = () => {
                 </TouchableOpacity>
             </View>
           ) : (
-            <FlatList
-              data={hostedEvents}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
+            <>
+              <FlatList
+                data={hostedEvents}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
                   <View style={[styles.eventCard, { maxWidth: maxCardWidth, width: '100%' }]}>
                 <View style={styles.eventHeader}>
                     <Text style={styles.eventTitle}>{item.title}</Text>
@@ -618,6 +619,32 @@ const ActivitiesScreen: React.FC = () => {
               contentContainerStyle={{ paddingBottom: spacing.lg, alignItems: 'center' }}
             showsVerticalScrollIndicator={false}
           />
+            {/* FAB for creating event */}
+            {(tab === 'hosted' && (userRole?.toLowerCase() === 'trainer' || userRole?.toLowerCase() === 'both')) && (
+              <TouchableOpacity
+                style={{
+                  position: 'absolute',
+                  right: scaleSize(24),
+                  bottom: scaleSize(32),
+                  backgroundColor: colors.primary,
+                  width: scaleSize(60),
+                  height: scaleSize(60),
+                  borderRadius: scaleSize(30),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  elevation: 5,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: scaleSize(4),
+                  zIndex: 100,
+                }}
+                onPress={handleCreateEvent}
+              >
+                <Ionicons name="add" size={32} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </>
         )
       )}
 

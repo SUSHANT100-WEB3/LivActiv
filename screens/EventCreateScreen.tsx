@@ -192,11 +192,11 @@ const EventCreateScreen: React.FC<{ onCreated?: () => void }> = ({ onCreated }) 
       Alert.alert('Error', 'Please enter a valid capacity');
       return false;
     }
-    if (!location) {
-      Alert.alert('Error', 'Please select a location');
+    if (!location || typeof location.latitude !== 'number' || typeof location.longitude !== 'number') {
+      Alert.alert('Error', 'Please select a valid location on the map');
       return false;
     }
-    if (date <= new Date()) {
+    if (!date || date <= new Date()) {
       Alert.alert('Error', 'Event date must be in the future');
       return false;
     }
@@ -304,7 +304,7 @@ const EventCreateScreen: React.FC<{ onCreated?: () => void }> = ({ onCreated }) 
         status: 'active',
         expiresAt: Timestamp.fromDate(combinedDate),
       };
-
+      console.log('Creating event with data:', eventData);
       await addDoc(collection(db, 'events'), eventData);
       
       Alert.alert('Success', 'Event created successfully!', [

@@ -31,6 +31,13 @@ interface Event {
   updatedAt: Timestamp;
 }
 
+interface Notification {
+  id: string;
+  type: string;
+  text: string;
+  timestamp: number | string | Date;
+}
+
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const [tab, setTab] = useState<'map' | 'list'>('map');
@@ -56,7 +63,7 @@ const HomeScreen: React.FC = () => {
   const maxCardWidth = Math.min(width - scaleSize(32), scaleSize(500));
   const { sport, date, price, radius, city } = useFilters();
   const [notificationsVisible, setNotificationsVisible] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [search, setSearch] = useState('');
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -96,9 +103,9 @@ const HomeScreen: React.FC = () => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifList = snapshot.docs.map(doc => ({
+      const notifList: Notification[] = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...(doc.data() as Omit<Notification, 'id'>)
       }));
       setNotifications(notifList);
     });
@@ -353,14 +360,16 @@ const HomeScreen: React.FC = () => {
               region={region}
               onRegionChangeComplete={setRegion}
             >
-              {filteredEvents.map(event => (
-                <Marker
-                  key={event.id}
-                  coordinate={{ latitude: event.latitude, longitude: event.longitude }}
-                  pinColor={event.price === 'Free' ? colors.free : colors.paid}
-                  onPress={() => handleEventPress(event)}
-                />
-              ))}
+              {events
+                .filter(event => typeof event.latitude === 'number' && typeof event.longitude === 'number')
+                .map(event => (
+                  <Marker
+                    key={event.id}
+                    coordinate={{ latitude: event.latitude, longitude: event.longitude }}
+                    pinColor={event.price === 'Free' ? colors.free : colors.paid}
+                    onPress={() => handleEventPress(event)}
+                  />
+                ))}
             </MapView>
             {/* Grid Overlay */}
             <View pointerEvents="none" style={styles.gridOverlay}>
