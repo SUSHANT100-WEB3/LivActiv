@@ -30,11 +30,6 @@
         "CAMERA"
       ]
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
       "expo-router",
       [
@@ -53,8 +48,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3fa773cf-72ef-459f-a0d7-d5af144e3ec3"
+        "projectId": "47fd6cc1-3707-4a35-9c52-54d4b1b42943"
       }
-    }
+    },
+    "owner": "thesushant52"
   }
 }
